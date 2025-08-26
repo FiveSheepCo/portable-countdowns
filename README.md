@@ -1,2 +1,2 @@
-# portable-countdowns
-Portable Countdowns Spec
+# Portable Countdowns Spec
+> The universal file format for countdowns.
