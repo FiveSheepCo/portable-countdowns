@@ -15,7 +15,7 @@ This document specifies a JSON format for exporting/importing countdowns. The co
 ## Data Model (TypeScript)
 
 ```typescript
-export type PortableCountdownV1  = {
+export type PortableCountdownV1 = {
 
 	/** Version must be 1 */
 	version: 1
