@@ -28,24 +28,20 @@ The key words **“MUST”**, **“MUST NOT”**, **“REQUIRED”**, **“SHALL
 
 ### Identifiers
 
-- Implementations **SHOULD** encode the `id` as a UUIDv4.
+- The `id` field **SHOULD** be encoded as a UUIDv4.
 
 Example: `2d49df56-4462-4ee0-acff-f670430e2750`
 
 ### Timestamps
 
-- Implementations **MUST** encode timestamp fields (such as `createdAt`, `updatedAt`, `targetDate`) as **ISO 8601** strings
+- Timestamp fields (such as `createdAt`, `updatedAt`, and `targetDate`) **MUST** be encoded as **ISO 8601** strings.
 
 Example: `2029-08-21T00:00:00Z`
 
 ### Vendor Extensions
 
-- Implementations **SHOULD** make an effort to preserve unknown vendor extensions.
-- Implementations **MUST** successfully parse unknown or missing vendor extensions.
-
-To put this in human-readable terms:
-
-When encountering unknown or missing vendor extensions, it's preferable to preserve these during deserialization, and to include them when re-serializing the same countdown. This is not a hard requirement, but it preserves wide compatibility between implementations, which is always a good thing. Even if implementations decide to throw away unknown vendor extensions, it's absolutely necessary not to _fail_ when encountering those. A spec-compliant implementation will always successfully parse a spec-compliant countdown, regardless of whether or not it chooses to preserve unknown extensions.
+- Implementations **MUST** parse documents successfully even when `vendorExtensions` contains unknown keys. This ensures forward compatibility with new extensions.
+- Implementations **SHOULD** preserve and re-serialize unknown keys within `vendorExtensions`. While not a strict requirement, this practice enhances interoperability between different applications by ensuring that vendor-specific data is not lost during processing.
 
 ## Data Model (TypeScript)
 
@@ -67,14 +63,14 @@ export type PortableCountdownV1 = {
 	 *
 	 * @example "2025-03-15T12:00:00Z"
 	 */
-	createdAt: Date
+	createdAt: string
 
 	/**
 	 * The last modification/update date.
 	 *
 	 * @example "2025-04-01T12:00:00Z"
 	 */
-	updatedAt?: Date
+	updatedAt?: string
 
 	/**
 	 * The countdown data in the default language.
@@ -94,12 +90,11 @@ export type PortableCountdownV1 = {
 	/**
 	 * The target date for the countdown.
 	 *
-	 * JavaScript/TypeScript automatically encodes {@link Date} objects correctly, but for other languages,
-	 * this **MUST** be a combined date-time string in ISO 8601 format.
+	 * This **MUST** be a string in ISO 8601 format.
 	 *
 	 * @example "2029-08-21T00:00:00Z"
 	 */
-	targetDate: Date
+	targetDate: string
 
 	/**
 	 * The time zone of the countdown, if relevant.
@@ -130,7 +125,7 @@ export type PortableCountdownV1 = {
 	 * While there is no fixed format for the key, we highly encourage vendors to pick a
 	 * uniquely identifiable key relevant to their application, such as `com.example.MyApp`.
 	 */
-	vendorExtensions: Record<string, unknown>
+	vendorExtensions?: Record<string, unknown>
 }
 
 namespace PortableCountdownV1.Types {
@@ -162,5 +157,98 @@ namespace PortableCountdownV1.Types {
 		 */
 		details?: string
 	}
+}
+```
+
+## JSON Schema
+
+The following JSON Schema provides a formal definition of the `PortableCountdownV1` format. Implementations **SHOULD** use this schema to validate imported data.
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Portable Countdown v1",
+  "description": "A portable, JSON-based format for countdowns.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "The specification version.",
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "description": "A unique identifier for the countdown, preferably a UUIDv4.",
+      "type": "string"
+    },
+    "createdAt": {
+      "description": "The creation timestamp in ISO 8601 format.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "description": "The last modification timestamp in ISO 8601 format.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "$ref": "#/definitions/LocalizedData"
+    },
+    "localizedData": {
+      "description": "Localized countdown data, keyed by BCP-47 language tags.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/LocalizedData"
+      }
+    },
+    "targetDate": {
+      "description": "The target timestamp in ISO 8601 format.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "timeZone": {
+      "description": "The IANA time zone identifier.",
+      "type": "string"
+    },
+    "source": {
+      "description": "The source application or tool that created the countdown.",
+      "type": "string"
+    },
+    "author": {
+      "description": "The author of the countdown.",
+      "type": "string"
+    },
+    "vendorExtensions": {
+      "description": "An object for vendor-specific extensions.",
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "version",
+    "id",
+    "createdAt",
+    "data",
+    "targetDate"
+  ],
+  "definitions": {
+    "LocalizedData": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "description": "The main title of the countdown.",
+          "type": "string"
+        },
+        "summary": {
+          "description": "A short summary or subtitle.",
+          "type": "string"
+        },
+        "details": {
+          "description": "A more detailed description.",
+          "type": "string"
+        }
+      },
+      "required": ["title"]
+    }
+  }
 }
 ```
